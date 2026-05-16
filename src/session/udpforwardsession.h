@@ -26,7 +26,7 @@
 
 class UDPForwardSession : public Session {
 public:
-    typedef std::function<void(const boost::asio::ip::udp::endpoint&, const std::string&)> UDPWrite;
+    using UDPWrite = std::function<void(const boost::asio::ip::udp::endpoint&, const std::string&)>;
 private:
     enum Status {
         CONNECT,

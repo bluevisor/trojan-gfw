@@ -38,7 +38,7 @@ public:
         FATAL = 4,
         OFF = 5
     };
-    typedef std::function<void(const std::string &, Level)> LogCallback;
+    using LogCallback = std::function<void(const std::string &, Level)>;
     static Level level;
     static FILE *keylog;
     static void log(const std::string &message, Level level = ALL);

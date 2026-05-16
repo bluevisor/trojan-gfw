@@ -18,6 +18,7 @@
  */
 
 #include "serversession.h"
+#include <algorithm>
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
 using namespace std;
@@ -191,12 +192,11 @@ void ServerSession::in_recv(const string &data) {
             }
             auto iterator = results.begin();
             if (config.tcp.prefer_ipv4) {
-                for (auto it = results.begin(); it != results.end(); ++it) {
-                    const auto &addr = it->endpoint().address();
-                    if (addr.is_v4()) {
-                        iterator = it;
-                        break;
-                    }
+                auto v4 = std::find_if(results.begin(), results.end(), [](const auto &e) {
+                    return e.endpoint().address().is_v4();
+                });
+                if (v4 != results.end()) {
+                    iterator = v4;
                 }
             }
             Log::log_with_endpoint(in_endpoint, query_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
@@ -300,12 +300,11 @@ void ServerSession::udp_sent() {
             }
             auto iterator = results.begin();
             if (config.tcp.prefer_ipv4) {
-                for (auto it = results.begin(); it != results.end(); ++it) {
-                    const auto &addr = it->endpoint().address();
-                    if (addr.is_v4()) {
-                        iterator = it;
-                        break;
-                    }
+                auto v4 = std::find_if(results.begin(), results.end(), [](const auto &e) {
+                    return e.endpoint().address().is_v4();
+                });
+                if (v4 != results.end()) {
+                    iterator = v4;
                 }
             }
             Log::log_with_endpoint(in_endpoint, query_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);

@@ -41,14 +41,13 @@ using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
 #ifdef ENABLE_REUSE_PORT
-typedef boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port;
+using reuse_port = boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT>;
 #endif // ENABLE_REUSE_PORT
 
 Service::Service(Config &config, bool test) :
     config(config),
     socket_acceptor(io_context),
     ssl_context(context::sslv23),
-    auth(nullptr),
     udp_socket(io_context) {
 #ifndef ENABLE_NAT
     if (config.run_type == Config::NAT) {
@@ -123,7 +122,7 @@ Service::Service(Config &config, bool test) :
         }
         if (config.mysql.enabled) {
 #ifdef ENABLE_MYSQL
-            auth = new Authenticator(config);
+            auth = std::make_unique<Authenticator>(config);
 #else // ENABLE_MYSQL
             Log::log_with_date_time("MySQL is not supported", Log::WARN);
 #endif // ENABLE_MYSQL
@@ -309,7 +308,7 @@ void Service::stop() {
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
-        session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
+        session = make_shared<ServerSession>(config, io_context, ssl_context, auth.get(), plain_http_response);
     } else if (config.run_type == Config::FORWARD) {
         session = make_shared<ForwardSession>(config, io_context, ssl_context);
     } else if (config.run_type == Config::NAT) {
@@ -391,9 +390,3 @@ void Service::reload_cert() {
     }
 }
 
-Service::~Service() {
-    if (auth) {
-        delete auth;
-        auth = nullptr;
-    }
-}
