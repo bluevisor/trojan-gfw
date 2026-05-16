@@ -17,7 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cerrno>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <boost/asio/signal_set.hpp>
 #include <boost/program_options.hpp>
@@ -26,6 +28,9 @@
 #ifdef ENABLE_MYSQL
 #include <mysql.h>
 #endif // ENABLE_MYSQL
+#ifdef HAVE_DAEMON
+#include <unistd.h>
+#endif // HAVE_DAEMON
 #include "core/service.h"
 #include "core/version.h"
 using namespace std;
@@ -68,9 +73,11 @@ int main(int argc, const char *argv[]) {
         string log_file;
         string keylog_file;
         bool test;
+        bool do_daemon;
         po::options_description desc("options");
         desc.add_options()
             ("config,c", po::value<string>(&config_file)->default_value(DEFAULT_CONFIG)->value_name("CONFIG"), "specify config file")
+            ("daemon,d", po::bool_switch(&do_daemon), "fork into background")
             ("help,h", "print help message")
             ("keylog,k", po::value<string>(&keylog_file)->value_name("KEYLOG"), "specify keylog file location (OpenSSL >= 1.1.1)")
             ("log,l", po::value<string>(&log_file)->value_name("LOG"), "specify log file location")
@@ -83,7 +90,7 @@ int main(int argc, const char *argv[]) {
         po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
         po::notify(vm);
         if (vm.count("help")) {
-            Log::log(string("usage: ") + argv[0] + " [-htv] [-l LOG] [-k KEYLOG] [[-c] CONFIG]", Log::FATAL);
+            Log::log(string("usage: ") + argv[0] + " [-hdtv] [-l LOG] [-k KEYLOG] [[-c] CONFIG]", Log::FATAL);
             cerr << desc;
             exit(EXIT_SUCCESS);
         }
@@ -136,6 +143,17 @@ int main(int argc, const char *argv[]) {
         }
         if (vm.count("keylog")) {
             Log::redirect_keylog(keylog_file);
+        }
+        if (do_daemon) {
+#ifdef HAVE_DAEMON
+            if (daemon(0, 0) == -1) {
+                Log::log(string("Failed to fork into background: ") + strerror(errno), Log::FATAL);
+                exit(EXIT_FAILURE);
+            }
+#else
+            Log::log("Daemon mode not supported on this platform", Log::FATAL);
+            exit(EXIT_FAILURE);
+#endif
         }
         bool restart;
         Config config;

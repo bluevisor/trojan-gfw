@@ -1,9 +1,10 @@
 # Usage
 
 ```
-usage: ./trojan [-htv] [-l LOG] [-k KEYLOG] [[-c] CONFIG]
+usage: ./trojan [-hdtv] [-l LOG] [-k KEYLOG] [[-c] CONFIG]
 options:
   -c [ --config ] CONFIG specify config file
+  -d [ --daemon ]        fork into background
   -h [ --help ]          print help message
   -k [ --keylog ] KEYLOG specify keylog file location (OpenSSL >= 1.1.1)
   -l [ --log ] LOG       specify log file location
