@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [master, revive]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake build-essential \
+            libboost-system-dev libboost-program-options-dev \
+            libssl-dev default-libmysqlclient-dev \
+            curl netcat-openbsd python3 openssl
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Smoke tests
+        working-directory: build
+        run: ctest --output-on-failure
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: trojan-linux-amd64
+          path: build/trojan
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install boost openssl@3
+
+      - name: Configure
+        env:
+          OPENSSL_ROOT_DIR: /opt/homebrew/opt/openssl@3
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_MYSQL=OFF \
+            -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT_DIR"
+
+      - name: Build
+        run: cmake --build build -j"$(sysctl -n hw.ncpu)"
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: trojan-macos
+          path: build/trojan
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t trojan:ci .
+      - name: Smoke check binary
+        run: docker run --rm trojan:ci trojan -v

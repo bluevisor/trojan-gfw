@@ -1,6 +1,6 @@
 # trojan
 
-[![Build Status](https://dev.azure.com/GreaterFire/Trojan-GFW/_apis/build/status/trojan-gfw.trojan?branchName=master)](https://dev.azure.com/GreaterFire/Trojan-GFW/_build/latest?definitionId=5&branchName=master)
+[![CI](https://github.com/bluevisor/trojan-gfw/actions/workflows/ci.yml/badge.svg?branch=revive)](https://github.com/bluevisor/trojan-gfw/actions/workflows/ci.yml)
 
 An unidentifiable mechanism that helps you bypass GFW.
 
