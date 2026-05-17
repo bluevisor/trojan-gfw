@@ -159,4 +159,11 @@ else()
     add_test(NAME LinuxSmokeTest-fake-client
              COMMAND bash ${CMAKE_SOURCE_DIR}/tests/LinuxSmokeTest/fake-client.sh ${CMAKE_BINARY_DIR}/trojan)
     SET_TESTS_PROPERTIES(LinuxSmokeTest-fake-client PROPERTIES DEPENDS "LinuxSmokeTest-basic")
+    if(ENABLE_SOCKET_AUTH)
+        set(TROJAN_MANAGER_BIN "" CACHE FILEPATH "Path to trojan-manager binary (for SocketAuth ctest)")
+        if(TROJAN_MANAGER_BIN)
+            add_test(NAME SocketAuthTest
+                     COMMAND bash ${CMAKE_SOURCE_DIR}/tests/SocketAuth/socket-auth.sh ${CMAKE_BINARY_DIR}/trojan ${TROJAN_MANAGER_BIN})
+        endif()
+    endif()
 endif()

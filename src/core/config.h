@@ -83,6 +83,11 @@ public:
         std::string cert;
         std::string ca;
     } mysql;
+    class ManagerSocketConfig {
+    public:
+        bool enabled;
+        std::string socket_path;
+    } manager_socket;
     void load(const std::string &filename);
     void populate(const std::string &JSON);
     bool sip003();

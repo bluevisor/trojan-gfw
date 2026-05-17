@@ -128,6 +128,14 @@ Service::Service(Config &config, bool test) :
             Log::log_with_date_time("MySQL is not supported", Log::WARN);
 #endif // ENABLE_MYSQL
         }
+        if (config.manager_socket.enabled) {
+#ifdef ENABLE_SOCKET_AUTH
+            socket_auth = std::make_unique<SocketAuthenticator>(io_context, config.manager_socket.socket_path);
+            socket_auth->start();
+#else
+            Log::log_with_date_time("manager_socket auth is not supported (rebuild with -DENABLE_SOCKET_AUTH=ON)", Log::WARN);
+#endif
+        }
     } else {
         if (config.ssl.sni.empty()) {
             config.ssl.sni = config.remote_addr;
@@ -309,7 +317,13 @@ void Service::stop() {
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
-        session = make_shared<ServerSession>(config, io_context, ssl_context, auth, plain_http_response);
+        session = make_shared<ServerSession>(config, io_context, ssl_context, auth,
+#ifdef ENABLE_SOCKET_AUTH
+            socket_auth.get(),
+#else
+            nullptr,
+#endif
+            plain_http_response);
     } else if (config.run_type == Config::FORWARD) {
         session = make_shared<ForwardSession>(config, io_context, ssl_context);
     } else if (config.run_type == Config::NAT) {

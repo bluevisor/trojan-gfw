@@ -21,11 +21,15 @@
 #define _SERVICE_H_
 
 #include <list>
+#include <memory>
 #include <boost/version.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/ip/udp.hpp>
 #include "authenticator.h"
+#ifdef ENABLE_SOCKET_AUTH
+#include "auth/socket_authenticator.h"
+#endif
 #include "session/udpforwardsession.h"
 
 class Service {
@@ -38,6 +42,9 @@ private:
     boost::asio::ip::tcp::acceptor socket_acceptor;
     boost::asio::ssl::context ssl_context;
     Authenticator *auth;
+#ifdef ENABLE_SOCKET_AUTH
+    std::unique_ptr<SocketAuthenticator> socket_auth;
+#endif
     std::string plain_http_response;
     boost::asio::ip::udp::socket udp_socket;
     std::list<std::weak_ptr<UDPForwardSession> > udp_sessions;

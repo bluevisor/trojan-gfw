@@ -111,6 +111,8 @@ void Config::populate(const ptree &tree) {
     mysql.key = tree.get("mysql.key", string());
     mysql.cert = tree.get("mysql.cert", string());
     mysql.ca = tree.get("mysql.ca", string());
+    manager_socket.enabled = tree.get("manager_socket.enabled", false);
+    manager_socket.socket_path = tree.get("manager_socket.socket_path", string("/run/trojan/manager.sock"));
 }
 
 bool Config::sip003() {

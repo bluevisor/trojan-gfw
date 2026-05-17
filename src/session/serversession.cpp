@@ -20,17 +20,21 @@
 #include "serversession.h"
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
+#ifdef ENABLE_SOCKET_AUTH
+#include "auth/socket_authenticator.h"
+#endif
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
 
-ServerSession::ServerSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context, Authenticator *auth, const string &plain_http_response) :
+ServerSession::ServerSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context, Authenticator *auth, SocketAuthenticator *socket_auth, const string &plain_http_response) :
     Session(config, io_context),
     status(HANDSHAKE),
     in_socket(io_context, ssl_context),
     out_socket(io_context),
     udp_resolver(io_context),
     auth(auth),
+    socket_auth(socket_auth),
     plain_http_response(plain_http_response) {}
 
 tcp::socket& ServerSession::accept_socket() {
@@ -140,6 +144,13 @@ void ServerSession::in_recv(const string &data) {
             auto password_iterator = config.password.find(req.password);
             if (password_iterator == config.password.end()) {
                 valid = false;
+#ifdef ENABLE_SOCKET_AUTH
+                if (socket_auth && socket_auth->auth(req.password)) {
+                    valid = true;
+                    auth_password = req.password;
+                    Log::log_with_endpoint(in_endpoint, "authenticated by manager socket (" + req.password.substr(0, 7) + ')', Log::INFO);
+                } else
+#endif
                 if (auth && auth->auth(req.password)) {
                     valid = true;
                     auth_password = req.password;
@@ -335,6 +346,11 @@ void ServerSession::destroy() {
     if (auth && !auth_password.empty()) {
         auth->record(auth_password, recv_len, sent_len);
     }
+#ifdef ENABLE_SOCKET_AUTH
+    if (socket_auth && !auth_password.empty()) {
+        socket_auth->record(auth_password, recv_len, sent_len);
+    }
+#endif
     boost::system::error_code ec;
     resolver.cancel();
     udp_resolver.cancel();
