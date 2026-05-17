@@ -49,6 +49,8 @@ cat > manager.json <<EOF
   "jwt_secret": "socket-auth-smoke-test"
 }
 EOF
+printf 'smoke-admin-pass\nsmoke-admin-pass\n' | "$MANAGER" -config manager.json admin add smoke-admin >/dev/null
+
 "$MANAGER" -config manager.json > manager.log 2>&1 &
 MANAGER_PID="$!"
 wait_port 28080
@@ -57,7 +59,7 @@ wait_port 28080
 PASSWORD="socket-auth-test-password"
 TOKEN=$(curl -s -X POST http://127.0.0.1:28080/api/v1/auth/login \
         -H 'content-type: application/json' \
-        -d '{"username":"admin","password":"stub"}' | jq -r .token)
+        -d '{"username":"smoke-admin","password":"smoke-admin-pass"}' | jq -r .token)
 curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
      http://127.0.0.1:28080/api/v1/users \
      -d "{\"username\":\"alice\",\"password\":\"$PASSWORD\",\"quota_bytes\":0}" > /dev/null
