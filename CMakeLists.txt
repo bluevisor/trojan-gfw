@@ -80,6 +80,13 @@ if(ENABLE_MYSQL)
     target_compile_definitions(trojan PRIVATE ENABLE_MYSQL)
 endif()
 
+option(ENABLE_SOCKET_AUTH "Build with UNIX-socket auth backend (trojan-manager protocol)" OFF)
+if(ENABLE_SOCKET_AUTH)
+    find_package(Boost 1.75.0 REQUIRED COMPONENTS json)
+    target_link_libraries(trojan PRIVATE Boost::json)
+    target_compile_definitions(trojan PRIVATE ENABLE_SOCKET_AUTH)
+endif()
+
 option(FORCE_TCP_FASTOPEN "Force build with TCP Fast Open support" OFF)
 if(FORCE_TCP_FASTOPEN)
     target_compile_definitions(trojan PRIVATE TCP_FASTOPEN=23 TCP_FASTOPEN_CONNECT=30)
